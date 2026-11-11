@@ -57,7 +57,7 @@ ls -la models/Stable-diffusion models/Lora
 # cp312 wheel and its build dies without zlib headers on this image.
 if command -v zypper >/dev/null 2>&1; then
   zypper --non-interactive --gpg-auto-import-keys refresh >> /workspace/forge_boot.log 2>&1 || true
-  for pkg in zlib-devel libjpeg-turbo-devel gcc python312-devel; do
+  for pkg in zlib-devel libjpeg8-devel libjpeg62-devel libjpeg-turbo-devel gcc python312-devel; do
     zypper --non-interactive install -y "$pkg" >> /workspace/forge_boot.log 2>&1 || true
   done
 fi
