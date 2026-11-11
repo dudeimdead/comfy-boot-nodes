@@ -58,6 +58,8 @@ ls -la models/Stable-diffusion models/Lora
 if ! pgrep -f "launch.py" >/dev/null; then
   cd "$FORGE" || exit 1
   if [ ! -x venv/bin/python ]; then python3 -m venv venv; fi
+  ./venv/bin/pip install --upgrade "setuptools<81" wheel
+  export PIP_NO_BUILD_ISOLATION=1
   nohup ./venv/bin/python launch.py --api --listen --port 7860 --skip-torch-cuda-test > /workspace/forge_server.log 2>&1 &
   echo "forge launch started pid $!"
 else
