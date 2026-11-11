@@ -52,6 +52,16 @@ if [ -n "$COMFY" ]; then
 fi
 ls -la models/Stable-diffusion models/Lora
 
+# --- system build deps for sdists that must compile on cp312 ---
+# Pillow 9.5.0 (pinned by Forge; blendmodes==2022 caps Pillow<10) has no
+# cp312 wheel and its build dies without zlib headers on this image.
+if command -v zypper >/dev/null 2>&1; then
+  zypper --non-interactive --gpg-auto-import-keys refresh >> /workspace/forge_boot.log 2>&1 || true
+  for pkg in zlib-devel libjpeg-turbo-devel gcc python312-devel; do
+    zypper --non-interactive install -y "$pkg" >> /workspace/forge_boot.log 2>&1 || true
+  done
+fi
+
 # --- launch Forge WebUI ---
 # NOTE: webui.sh refuses to run as root, so build the venv by hand and
 # call launch.py directly with the venv python (it self-installs deps).
