@@ -60,7 +60,8 @@ if ! pgrep -f "launch.py" >/dev/null; then
   # Python 3.12 fixes: Forge's pins predate cp312 wheels for these two
   # (scikit-image 0.21.0 is sdist-only for cp312; its meson build fails).
   sed -i 's/^scikit-image==.*/scikit-image==0.24.0/' requirements_versions.txt
-  sed -i 's/^Pillow==.*/Pillow==10.4.0/' requirements_versions.txt
+  # NOTE: Pillow stays at Forge's 9.5.0 pin - blendmodes==2022 requires
+  # Pillow<10, and 9.5.0's sdist is the only sub-10 option on cp312.
   if [ ! -x venv/bin/python ]; then python3 -m venv venv; fi
   ./venv/bin/pip install --upgrade "setuptools<81" wheel
   export PIP_NO_BUILD_ISOLATION=1
