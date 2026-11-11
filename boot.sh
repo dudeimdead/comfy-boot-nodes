@@ -52,10 +52,13 @@ if [ -n "$COMFY" ]; then
 fi
 ls -la models/Stable-diffusion models/Lora
 
-# --- launch Forge WebUI (webui.sh builds the venv + installs deps) ---
+# --- launch Forge WebUI ---
+# NOTE: webui.sh refuses to run as root, so build the venv by hand and
+# call launch.py directly with the venv python (it self-installs deps).
 if ! pgrep -f "launch.py" >/dev/null; then
-  export COMMANDLINE_ARGS="--api --listen --port 7860 --skip-torch-cuda-test"
-  nohup bash webui.sh > /workspace/forge_server.log 2>&1 &
+  cd "$FORGE" || exit 1
+  if [ ! -x venv/bin/python ]; then python3 -m venv venv; fi
+  nohup ./venv/bin/python launch.py --api --listen --port 7860 --skip-torch-cuda-test > /workspace/forge_server.log 2>&1 &
   echo "forge launch started pid $!"
 else
   echo "forge already running"
