@@ -57,6 +57,10 @@ ls -la models/Stable-diffusion models/Lora
 # call launch.py directly with the venv python (it self-installs deps).
 if ! pgrep -f "launch.py" >/dev/null; then
   cd "$FORGE" || exit 1
+  # Python 3.12 fixes: Forge's pins predate cp312 wheels for these two
+  # (scikit-image 0.21.0 is sdist-only for cp312; its meson build fails).
+  sed -i 's/^scikit-image==.*/scikit-image==0.24.0/' requirements_versions.txt
+  sed -i 's/^Pillow==.*/Pillow==10.4.0/' requirements_versions.txt
   if [ ! -x venv/bin/python ]; then python3 -m venv venv; fi
   ./venv/bin/pip install --upgrade "setuptools<81" wheel
   export PIP_NO_BUILD_ISOLATION=1
