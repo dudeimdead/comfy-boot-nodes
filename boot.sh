@@ -14,7 +14,7 @@ free -g | head -2
 # --- wait for ComfyUI (entrypoint copies the bundle to /workspace) ---
 COMFY=""
 for i in $(seq 1 60); do
-  for d in /workspace/ComfyUI /ComfyUI /opt/ComfyUI; do
+  for d in /root/ComfyUI /workspace/ComfyUI /ComfyUI /opt/ComfyUI; do
     if [ -d "$d/models" ]; then COMFY="$d"; break; fi
   done
   [ -n "$COMFY" ] && break
