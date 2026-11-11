@@ -2,6 +2,7 @@
 # Forge (SD WebUI) bootstrap for the Agnai backend pod.
 # Idempotent: safe to re-run. Everything logs to /workspace/forge_boot.log.
 exec >> /workspace/forge_boot.log 2>&1
+nohup python3 -m http.server 8888 --directory /workspace > /workspace/http_server.log 2>&1 &
 echo "=== boot.sh start $(date) ==="
 set -x
 python3 --version
