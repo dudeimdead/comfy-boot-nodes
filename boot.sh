@@ -10,14 +10,17 @@ nvidia-smi | head -12
 df -h /workspace | tail -1
 free -g | head -2
 
-# --- locate ComfyUI ---
+# --- wait for ComfyUI (entrypoint copies the bundle to /workspace) ---
 COMFY=""
-for d in /workspace/ComfyUI /ComfyUI /opt/ComfyUI; do
-  if [ -d "$d/models" ]; then COMFY="$d"; break; fi
+for i in $(seq 1 60); do
+  for d in /workspace/ComfyUI /ComfyUI /opt/ComfyUI; do
+    if [ -d "$d/models" ]; then COMFY="$d"; break; fi
+  done
+  [ -n "$COMFY" ] && break
+  sleep 10
 done
 echo "COMFY=$COMFY"
 ls "$COMFY/models/checkpoints" "$COMFY/models/loras" 2>/dev/null
-ls -la "$COMFY/models/checkpoints/SDXL" "$COMFY/models/loras/SDXL" "$COMFY/models/loras/DMD2" "$COMFY/models/loras/HyperSD/SDXL" 2>/dev/null
 
 # --- clone Forge ---
 FORGE=/workspace/webui-forge
@@ -26,10 +29,18 @@ if [ ! -d "$FORGE" ]; then
 fi
 cd "$FORGE" || exit 1
 
+# --- wait for the checkpoint + LoRAs to be ingested into ComfyUI ---
+CKPT="$COMFY/models/checkpoints/SDXL/sd_xl_base_1.0.safetensors"
+for i in $(seq 1 120); do
+  [ -f "$CKPT" ] && break
+  sleep 15
+done
+ls -la "$COMFY/models/checkpoints/SDXL" "$COMFY/models/loras/SDXL" "$COMFY/models/loras/DMD2" "$COMFY/models/loras/HyperSD/SDXL" 2>/dev/null
+
 # --- model symlinks: Forge side (real persona names) ---
 mkdir -p models/Stable-diffusion models/Lora
 if [ -n "$COMFY" ]; then
-  ln -sf "$COMFY/models/checkpoints/SDXL/sd_xl_base_1.0.safetensors" models/Stable-diffusion/JuggernautXL-v9.safetensors
+  ln -sf "$CKPT" models/Stable-diffusion/JuggernautXL-v9.safetensors
   ln -sf "$COMFY/models/loras/SDXL/sd_xl_offset_example-lora_1.0.safetensors" models/Lora/Orchid.safetensors
   ln -sf "$COMFY/models/loras/DMD2/dmd2_sdxl_4step_lora.safetensors" models/Lora/EmmyGirl.safetensors
   ln -sf "$COMFY/models/loras/HyperSD/SDXL/Hyper-SDXL-1step-lora.safetensors" models/Lora/MollyGirl.safetensors
