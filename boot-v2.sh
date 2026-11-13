@@ -8,6 +8,9 @@
 #     (48 parts, Contents API, ref main), fetched with the pod env var
 #     ZOYA_GH_TOKEN. If the token is unset the z0ya fetch logs a clear
 #     skip and boot continues with the other four models.
+#   - FLUX.1-dev FP8 stack (HuggingFace, public) — checkpoint, T5-XXL
+#     FP8 + CLIP-L text encoders, FLUX VAE. Single Forge instance serves
+#     both SDXL and FLUX; Agnai switches the checkpoint per request.
 # Idempotent: safe to re-run (present files with matching size are skipped).
 # Everything logs to /workspace/forge_boot.log.
 exec >> /workspace/forge_boot.log 2>&1
@@ -140,6 +143,16 @@ dl "https://civitai.com/api/download/models/2759180?fileId=2645720" \
    "$COMFY/models/loras/DMD2/dmd2_sdxl_4step_lora.safetensors" 228465468 &
 dl "https://civitai.com/api/download/models/2781151?fileId=2667497" \
    "$COMFY/models/loras/HyperSD/SDXL/Hyper-SDXL-1step-lora.safetensors" 228465468 &
+# --- FLUX.1-dev FP8 stack (Kijai FP8 checkpoint; FP8 text encoders) ---
+# z0ya was trained on dev, not schnell — dev checkpoint only.
+dl "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors" \
+   "$COMFY/models/checkpoints/flux1-dev-fp8.safetensors" 11901525888 &
+dl "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors" \
+   "$COMFY/models/text_encoders/t5xxl_fp8_e4m3fn.safetensors" 4893934904 &
+dl "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors" \
+   "$COMFY/models/text_encoders/clip_l.safetensors" 246144152 &
+dl "https://huggingface.co/foxmail/flux_vae/resolve/main/ae.safetensors" \
+   "$COMFY/models/vae/ae.safetensors" 335304388 &
 ghlora_v31 &
 wait
 ls -la "$COMFY/models/checkpoints/SDXL" "$COMFY/models/loras" 2>/dev/null
@@ -162,9 +175,13 @@ ls -la "$COMFY/models/checkpoints/SDXL" "$COMFY/models/loras/SDXL" "$COMFY/model
 # --- model symlinks: Forge side (real persona names) ---
 # Only link files that actually exist; a missing download logs FAILED
 # above and surfaces as an absent LoRA instead of a dangling symlink.
-mkdir -p models/Stable-diffusion models/Lora
+mkdir -p models/Stable-diffusion models/Lora models/text_encoder models/VAE
 if [ -n "$COMFY" ]; then
   [ -f "$CKPT" ] && ln -sf "$CKPT" models/Stable-diffusion/JuggernautXL-v9.safetensors
+  [ -f "$COMFY/models/checkpoints/flux1-dev-fp8.safetensors" ] && ln -sf "$COMFY/models/checkpoints/flux1-dev-fp8.safetensors" models/Stable-diffusion/flux1-dev-fp8.safetensors
+  [ -f "$COMFY/models/text_encoders/t5xxl_fp8_e4m3fn.safetensors" ] && ln -sf "$COMFY/models/text_encoders/t5xxl_fp8_e4m3fn.safetensors" models/text_encoder/t5xxl_fp8_e4m3fn.safetensors
+  [ -f "$COMFY/models/text_encoders/clip_l.safetensors" ] && ln -sf "$COMFY/models/text_encoders/clip_l.safetensors" models/text_encoder/clip_l.safetensors
+  [ -f "$COMFY/models/vae/ae.safetensors" ] && ln -sf "$COMFY/models/vae/ae.safetensors" models/VAE/ae.safetensors
   [ -f "$COMFY/models/loras/SDXL/sd_xl_offset_example-lora_1.0.safetensors" ] && ln -sf "$COMFY/models/loras/SDXL/sd_xl_offset_example-lora_1.0.safetensors" models/Lora/Orchid.safetensors
   [ -f "$COMFY/models/loras/DMD2/dmd2_sdxl_4step_lora.safetensors" ] && ln -sf "$COMFY/models/loras/DMD2/dmd2_sdxl_4step_lora.safetensors" models/Lora/EmmyGirl.safetensors
   [ -f "$COMFY/models/loras/HyperSD/SDXL/Hyper-SDXL-1step-lora.safetensors" ] && ln -sf "$COMFY/models/loras/HyperSD/SDXL/Hyper-SDXL-1step-lora.safetensors" models/Lora/MollyGirl.safetensors
