@@ -15,6 +15,9 @@
 # Everything logs to /workspace/forge_boot.log.
 exec >> /workspace/forge_boot.log 2>&1
 nohup python3 -m http.server 8888 --directory /workspace > /workspace/http_server.log 2>&1 &
+disown # MUST disown: the bare `wait` below (after the downloads) would
+      # otherwise wait on this never-exiting server forever (2026-11-13
+      # first live run stalled here: all downloads ok, script never moved on).
 echo "=== boot-v2.sh start $(date) ==="
 set -x
 python3 --version
